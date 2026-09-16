@@ -63,13 +63,12 @@ export default function PhoneOtpModal({
 
     const initAndSendOtp = async () => {
       if (!auth) {
-        setError('Firebase Authentication is not available. Please try again or book via WhatsApp.');
+        setError('Firebase Authentication is initializing. You can still confirm your booking directly on WhatsApp.');
         return;
       }
 
       setLoading(true);
       try {
-        // Clear previous verifier
         if (recaptchaVerifierRef.current) {
           try {
             recaptchaVerifierRef.current.clear();
@@ -78,20 +77,20 @@ export default function PhoneOtpModal({
           }
         }
 
-        // Initialize invisible reCAPTCHA
-        const verifier = new RecaptchaVerifier(auth, 'recaptcha-verifier-container', {
+        const targetContainer = document.getElementById('global-recaptcha-container') || 'recaptcha-verifier-container';
+        const verifier = new RecaptchaVerifier(auth, targetContainer, {
           size: 'invisible',
           callback: () => {
             // reCAPTCHA solved
           },
           'expired-callback': () => {
-            setError('reCAPTCHA expired. Please try resending OTP.');
+            setError('reCAPTCHA expired. Please click Resend OTP.');
           },
         });
 
         recaptchaVerifierRef.current = verifier;
 
-        // Send OTP
+        // Send OTP via Firebase
         const confirmation = await signInWithPhoneNumber(auth, formattedPhone, verifier);
         if (isMounted) {
           setConfirmationResult(confirmation);
@@ -107,8 +106,10 @@ export default function PhoneOtpModal({
           setLoading(false);
           if (err.code === 'auth/invalid-phone-number') {
             setError('Please enter a valid 10-digit mobile number.');
+          } else if (err.code === 'auth/unauthorized-domain') {
+            setError('Website domain is pending authorization in Firebase Console (Authentication > Settings > Authorized Domains). Click below to confirm via WhatsApp.');
           } else if (err.code === 'auth/too-many-requests') {
-            setError('Too many SMS requests sent. Please wait a few minutes or proceed with WhatsApp confirmation.');
+            setError('Too many SMS requests sent. Please wait a few minutes or proceed with WhatsApp verification.');
           } else if (err.code === 'auth/quota-exceeded') {
             setError('SMS limit reached for today. You can still confirm your booking directly on WhatsApp!');
           } else {
@@ -120,7 +121,7 @@ export default function PhoneOtpModal({
 
     const timer = setTimeout(() => {
       initAndSendOtp();
-    }, 150);
+    }, 200);
 
     return () => {
       isMounted = false;

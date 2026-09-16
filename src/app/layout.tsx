@@ -99,6 +99,8 @@ export default function RootLayout({
             <FloatingActions />
             <WhatsAppButton />
             <ScrollToTop />
+            {/* Global reCAPTCHA container for Phone Auth */}
+            <div id="global-recaptcha-container" className="invisible fixed top-0 left-0" />
           </CartToastProvider>
         </CartProvider>
       </body>
