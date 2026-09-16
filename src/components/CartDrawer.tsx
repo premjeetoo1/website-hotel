@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/context/CartContext';
 import { submitOrder } from '@/lib/firebaseServices';
 import confetti from 'canvas-confetti';
-import PhoneOtpModal from '@/components/PhoneOtpModal';
 import {
   X,
   ShoppingBag,
@@ -30,8 +29,6 @@ export default function CartDrawer() {
   const [instructions, setInstructions] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderConfirmed, setOrderConfirmed] = useState<{ id: string; isLive: boolean } | null>(null);
-  const [isOtpOpen, setIsOtpOpen] = useState(false);
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
   const deliveryFee = orderType === 'delivery' ? 40 : 0;
   const gst = Math.round(subtotal * 0.05); // 5% GST for restaurant
@@ -82,22 +79,11 @@ export default function CartDrawer() {
     if (!customerName || !phone || items.length === 0) return;
     if (orderType === 'delivery' && !address.trim()) return;
 
-    if (!isPhoneVerified) {
-      setIsOtpOpen(true);
-      return;
-    }
-
-    await executeOrderCheckout();
-  };
-
-  const handleOtpSuccess = (verifiedPhone: string) => {
-    setIsPhoneVerified(true);
-    executeOrderCheckout(verifiedPhone);
+    await executeOrderCheckout(phone);
   };
 
   const handleClose = () => {
     setIsCartOpen(false);
-    setIsPhoneVerified(false);
     if (orderConfirmed) {
       setTimeout(() => setOrderConfirmed(null), 300);
     }
@@ -318,30 +304,14 @@ export default function CartDrawer() {
                         />
                       </div>
                       <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-xs font-medium text-dark-700 block">Phone Number *</label>
-                          {isPhoneVerified ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
-                              <CheckCircle2 className="w-3 h-3 text-green-600" />
-                              <span>OTP Verified</span>
-                            </span>
-                          ) : (
-                            <span className="text-[10px] text-primary-600 font-semibold flex items-center gap-1">
-                              <ShieldCheck className="w-3 h-3" />
-                              <span>SMS OTP</span>
-                            </span>
-                          )}
-                        </div>
+                        <label className="text-xs font-medium text-dark-700 block mb-1">Phone Number * (10 Digits)</label>
                         <input
                           type="tel"
                           required
                           value={phone}
-                          onChange={(e) => {
-                            setPhone(e.target.value);
-                            if (isPhoneVerified) setIsPhoneVerified(false);
-                          }}
+                          onChange={(e) => setPhone(e.target.value)}
                           placeholder="+91 98765 43210"
-                          className={`input-field py-2 text-sm ${isPhoneVerified ? 'border-green-400 bg-green-50/20' : ''}`}
+                          className="input-field py-2 text-sm"
                         />
                       </div>
                       {orderType === 'delivery' && (
@@ -404,15 +374,10 @@ export default function CartDrawer() {
                           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                           <span>Sending to Kitchen...</span>
                         </>
-                      ) : isPhoneVerified ? (
+                      ) : (
                         <>
                           <span>Place Order · ₹{grandTotal}</span>
                           <ArrowRight className="w-4 h-4" />
-                        </>
-                      ) : (
-                        <>
-                          <ShieldCheck className="w-4 h-4" />
-                          <span>Verify Phone &amp; Order · ₹{grandTotal}</span>
                         </>
                       )}
                     </button>
@@ -423,16 +388,6 @@ export default function CartDrawer() {
           </div>
         </div>
       )}
-
-      {/* SMS Phone OTP Modal */}
-      <PhoneOtpModal
-        isOpen={isOtpOpen}
-        onClose={() => setIsOtpOpen(false)}
-        phoneNumber={phone}
-        onVerified={handleOtpSuccess}
-        title="Verify Food Order"
-        subtitle="We send a quick 6-digit SMS code to verify your order"
-      />
     </AnimatePresence>
   );
 }

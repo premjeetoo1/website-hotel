@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { submitOrder, getWhatsAppOrderUrl } from '@/lib/firebaseServices';
 import confetti from 'canvas-confetti';
-import PhoneOtpModal from '@/components/PhoneOtpModal';
 import {
   Car,
   Clock,
@@ -28,35 +27,32 @@ const QUICK_HIGHWAY_COMBOS = [
     name: 'Tandoori Chicken + Rumali Roti Combo',
     bengali: 'তন্দুরি চিকেন কম্বো',
     desc: 'Half Tandoori Chicken (4 pcs) + 4 Fresh Rotis + Mint Chutney & Salad',
-    price: 360,
-    time: '15 mins',
+    price: 340,
+    time: '15 Mins',
+    eta: '15 Mins',
+    icon: '🍗',
     popular: true,
   },
   {
     id: 'combo-2',
-    name: 'Bengali Special Fish Thali (Katla)',
-    bengali: 'রুই/কাতলা মাছের থালি',
-    desc: 'Steamed Rice, Fresh Katla Kalia/Jhol, Dal, Bhaja, Chutney, Papad & Mishti',
-    price: 260,
-    time: '10 mins',
+    name: 'Authentic Bengali Special Thali',
+    bengali: 'স্পেশাল বাঙালি থালি',
+    desc: 'Basmati Rice + Katla Kalia / Chicken + Moong Dal + Bhaja + Chutney',
+    price: 240,
+    time: '10 Mins',
+    eta: '10 Mins',
+    icon: '🍛',
     popular: true,
   },
   {
     id: 'combo-3',
-    name: 'Chicken Masala + Butter Naan Combo',
-    bengali: 'চিকেন মাসালা ও বাটার নান',
-    desc: 'Rich Spiced Chicken Masala (4 pcs) + 2 Crispy Butter Naans + Salad',
-    price: 320,
-    time: '15 mins',
-    popular: true,
-  },
-  {
-    id: 'combo-4',
-    name: 'Dooars Steamed Chicken Momo Platter',
-    bengali: 'চিকেন মোমো প্ল্যাটার',
-    desc: '16 Pcs Hot Steamed Dumplings + Clear Soup & Red Dalle Chilly Sauce',
+    name: 'Dooars Hot Momo & Thukpa Platter',
+    bengali: 'মোমো ও থুকপা প্ল্যাটার',
+    desc: 'Steamed Chicken Momos (8 pcs) + Hot Chicken Thukpa Soup + Spicy Dip',
     price: 220,
-    time: '10 mins',
+    time: '10 Mins',
+    eta: '10 Mins',
+    icon: '🥟',
     popular: false,
   },
 ];
@@ -70,8 +66,6 @@ export default function OrderAheadBanner() {
   const [diningMode, setDiningMode] = useState<'dine-in' | 'takeaway'>('dine-in');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderVoucher, setOrderVoucher] = useState<{ id: string; whatsAppUrl: string } | null>(null);
-  const [isOtpOpen, setIsOtpOpen] = useState(false);
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
   const handleOpenPreOrder = (combo: typeof QUICK_HIGHWAY_COMBOS[0]) => {
     setSelectedCombo(combo);
@@ -81,7 +75,6 @@ export default function OrderAheadBanner() {
   const handleClose = () => {
     setSelectedCombo(null);
     setOrderVoucher(null);
-    setIsPhoneVerified(false);
   };
 
   const executePreOrderSubmit = async (verifiedPhone?: string) => {
@@ -135,17 +128,7 @@ export default function OrderAheadBanner() {
     e.preventDefault();
     if (!selectedCombo || !customerName.trim() || !phone.trim()) return;
 
-    if (!isPhoneVerified) {
-      setIsOtpOpen(true);
-      return;
-    }
-
-    await executePreOrderSubmit();
-  };
-
-  const handleOtpSuccess = (verifiedPhone: string) => {
-    setIsPhoneVerified(true);
-    executePreOrderSubmit(verifiedPhone);
+    await executePreOrderSubmit(phone);
   };
 
   return (
@@ -342,30 +325,14 @@ export default function OrderAheadBanner() {
                       />
                     </div>
                     <div>
-                      <div className="flex items-center justify-between mb-0.5">
-                        <label className="label text-xs">Phone Number *</label>
-                        {isPhoneVerified ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
-                            <CheckCircle2 className="w-3 h-3 text-green-600" />
-                            <span>OTP Verified</span>
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-primary-600 font-semibold flex items-center gap-1">
-                            <ShieldCheck className="w-3 h-3" />
-                            <span>SMS OTP</span>
-                          </span>
-                        )}
-                      </div>
+                      <label className="label text-xs mb-0.5 block">Phone Number * (10 Digits)</label>
                       <input
                         type="tel"
                         required
                         value={phone}
-                        onChange={(e) => {
-                          setPhone(e.target.value);
-                          if (isPhoneVerified) setIsPhoneVerified(false);
-                        }}
+                        onChange={(e) => setPhone(e.target.value)}
                         placeholder="+91 98765 43210"
-                        className={`input-field py-2 text-xs ${isPhoneVerified ? 'border-green-400 bg-green-50/20' : ''}`}
+                        className="input-field py-2 text-xs"
                       />
                     </div>
                   </div>
@@ -433,18 +400,13 @@ export default function OrderAheadBanner() {
                     >
                       {isSubmitting ? (
                         <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                           <span>Sending to Kitchen...</span>
-                        </>
-                      ) : isPhoneVerified ? (
-                        <>
-                          <Flame className="w-4 h-4 text-amber-200" />
-                          <span>Place Express Highway Pre-Order (₹{selectedCombo.price})</span>
                         </>
                       ) : (
                         <>
-                          <ShieldCheck className="w-4 h-4 text-white" />
-                          <span>Verify Phone &amp; Pre-Order (₹{selectedCombo.price})</span>
+                          <Flame className="w-4 h-4 text-amber-200" />
+                          <span>Place Express Highway Pre-Order (₹{selectedCombo.price})</span>
                         </>
                       )}
                     </button>
@@ -458,16 +420,6 @@ export default function OrderAheadBanner() {
           </div>
         )}
       </AnimatePresence>
-
-      {/* SMS Phone OTP Modal */}
-      <PhoneOtpModal
-        isOpen={isOtpOpen}
-        onClose={() => setIsOtpOpen(false)}
-        phoneNumber={phone}
-        onVerified={handleOtpSuccess}
-        title="Verify Highway Pre-Order"
-        subtitle="We send a quick 6-digit SMS code to verify your pre-order"
-      />
     </section>
   );
 }
