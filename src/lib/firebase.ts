@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
+import { getAuth, Auth } from 'firebase/auth';
 
 // Live Firebase configuration for Aaroshi Restaurant
 const firebaseConfig = {
@@ -17,12 +18,14 @@ export const isFirebaseConfigured = true;
 
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
+let auth: Auth | null = null;
 
 try {
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   db = getFirestore(app);
+  auth = getAuth(app);
 } catch (err) {
-  console.warn('[Firebase] Could not initialize Firestore:', err);
+  console.warn('[Firebase] Could not initialize Firebase services:', err);
 }
 
-export { app, db };
+export { app, db, auth };

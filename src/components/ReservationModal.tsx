@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/context/CartContext';
 import { submitReservation } from '@/lib/firebaseServices';
 import confetti from 'canvas-confetti';
+import PhoneOtpModal from '@/components/PhoneOtpModal';
 import {
   X,
   Calendar,
@@ -17,6 +18,7 @@ import {
   User,
   Heart,
   Mail,
+  ShieldCheck,
 } from 'lucide-react';
 
 const SEATING_OPTIONS = [
@@ -47,16 +49,17 @@ export default function ReservationModal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<{ id: string; isLive: boolean } | null>(null);
+  const [isOtpOpen, setIsOtpOpen] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeReservation = async (verifiedPhone?: string) => {
     setIsSubmitting(true);
     setError(null);
 
     try {
       const res = await submitReservation({
         name: formData.name,
-        phone: formData.phone,
+        phone: verifiedPhone || formData.phone,
         email: formData.email,
         guests: Number(formData.guests),
         date: formData.date,
@@ -85,9 +88,27 @@ export default function ReservationModal() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim() || !formData.phone.trim()) return;
+
+    if (!isPhoneVerified) {
+      setIsOtpOpen(true);
+      return;
+    }
+
+    await executeReservation();
+  };
+
+  const handleOtpSuccess = (verifiedPhone: string) => {
+    setIsPhoneVerified(true);
+    executeReservation(verifiedPhone);
+  };
+
   const handleClose = () => {
     closeReservation();
     setError(null);
+    setIsPhoneVerified(false);
     if (confirmation) {
       setTimeout(() => {
         setConfirmation(null);
@@ -247,16 +268,32 @@ export default function ReservationModal() {
                   </div>
 
                   <div>
-                    <label className="label flex items-center gap-1.5 text-xs">
-                      <Phone className="w-3.5 h-3.5 text-primary-500" /> Phone Number *
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="label flex items-center gap-1.5 text-xs">
+                        <Phone className="w-3.5 h-3.5 text-primary-500" /> Phone Number *
+                      </label>
+                      {isPhoneVerified ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+                          <CheckCircle2 className="w-3 h-3 text-green-600" />
+                          <span>OTP Verified</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-primary-600 font-semibold flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3" />
+                          <span>SMS OTP</span>
+                        </span>
+                      )}
+                    </div>
                     <input
                       type="tel"
                       required
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, phone: e.target.value });
+                        if (isPhoneVerified) setIsPhoneVerified(false);
+                      }}
                       placeholder="+91 98765 43210"
-                      className="input-field py-2.5 text-sm"
+                      className={`input-field py-2.5 text-sm ${isPhoneVerified ? 'border-green-400 bg-green-50/20' : ''}`}
                     />
                   </div>
                 </div>
@@ -364,15 +401,20 @@ export default function ReservationModal() {
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         <span>Confirming Reservation...</span>
                       </>
-                    ) : (
+                    ) : isPhoneVerified ? (
                       <>
                         <Sparkles className="w-4 h-4 text-amber-200" />
                         <span>Confirm Table Booking</span>
                       </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="w-4 h-4 text-white" />
+                        <span>Verify Phone &amp; Book Table</span>
+                      </>
                     )}
                   </button>
                   <p className="text-[11px] text-center text-dark-400 mt-2">
-                    Instant confirmation · Free cancellation · No pre-payment required
+                    Instant confirmation · Free cancellation · SMS Spam-Protected
                   </p>
                 </div>
               </form>
@@ -380,6 +422,16 @@ export default function ReservationModal() {
           </motion.div>
         </div>
       )}
+
+      {/* SMS Phone OTP Modal */}
+      <PhoneOtpModal
+        isOpen={isOtpOpen}
+        onClose={() => setIsOtpOpen(false)}
+        phoneNumber={formData.phone}
+        onVerified={handleOtpSuccess}
+        title="Verify Table Reservation"
+        subtitle="We send a quick 6-digit SMS code to verify your phone"
+      />
     </AnimatePresence>
   );
 }

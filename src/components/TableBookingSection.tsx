@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { submitReservation } from '@/lib/firebaseServices';
 import confetti from 'canvas-confetti';
+import PhoneOtpModal from '@/components/PhoneOtpModal';
 import {
   Calendar,
   Clock,
@@ -108,6 +109,8 @@ export default function TableBookingSection() {
   // Status
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<{ id: string; isLive: boolean } | null>(null);
+  const [isOtpOpen, setIsOtpOpen] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
   // Quick Date Helpers
   const todayStr = new Date().toLocaleDateString('en-CA');
@@ -118,10 +121,8 @@ export default function TableBookingSection() {
   dayAfter.setDate(dayAfter.getDate() + 2);
   const dayAfterStr = dayAfter.toLocaleDateString('en-CA');
 
-  const handleBookingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !phone.trim()) return;
-
+  const executeReservation = async (verifiedPhoneNumber?: string) => {
+    const finalPhone = verifiedPhoneNumber || phone;
     setIsSubmitting(true);
     try {
       const fullNotes = [
@@ -133,7 +134,7 @@ export default function TableBookingSection() {
 
       const res = await submitReservation({
         name,
-        phone,
+        phone: finalPhone,
         email: email || undefined,
         guests: guestsCount,
         date: selectedDate,
@@ -161,6 +162,24 @@ export default function TableBookingSection() {
     }
   };
 
+  const handleBookingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !phone.trim()) return;
+
+    // Trigger OTP modal if not yet verified
+    if (!isPhoneVerified) {
+      setIsOtpOpen(true);
+      return;
+    }
+
+    await executeReservation();
+  };
+
+  const handleOtpSuccess = (verifiedPhone: string) => {
+    setIsPhoneVerified(true);
+    executeReservation(verifiedPhone);
+  };
+
   const handlePrintPass = () => {
     window.print();
   };
@@ -172,6 +191,7 @@ export default function TableBookingSection() {
     setPhone('');
     setEmail('');
     setSpecialRequests('');
+    setIsPhoneVerified(false);
   };
 
   return (
@@ -682,16 +702,32 @@ export default function TableBookingSection() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-dark-800 block mb-1">
-                      Phone Number *
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-bold text-dark-800 block">
+                        Phone Number *
+                      </label>
+                      {isPhoneVerified ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+                          <CheckCircle2 className="w-3 h-3 text-green-600" />
+                          <span>OTP Verified</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-primary-600 font-semibold flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3" />
+                          <span>SMS OTP Security</span>
+                        </span>
+                      )}
+                    </div>
                     <input
                       type="tel"
                       required
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+91 95631 61422"
-                      className="input-field py-2.5 text-sm"
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        if (isPhoneVerified) setIsPhoneVerified(false);
+                      }}
+                      placeholder="e.g. 95631 61422"
+                      className={`input-field py-2.5 text-sm ${isPhoneVerified ? 'border-green-400 bg-green-50/20' : ''}`}
                     />
                   </div>
                 </div>
@@ -744,10 +780,15 @@ export default function TableBookingSection() {
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         <span>Reserving Table...</span>
                       </>
-                    ) : (
+                    ) : isPhoneVerified ? (
                       <>
                         <Sparkles className="w-5 h-5 text-amber-300" />
                         <span>Confirm &amp; Generate Table Pass</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="w-5 h-5 text-white" />
+                        <span>Verify Phone &amp; Reserve Table</span>
                       </>
                     )}
                   </button>
@@ -757,6 +798,16 @@ export default function TableBookingSection() {
           </div>
         )}
       </div>
+
+      {/* SMS Phone OTP Verification Modal */}
+      <PhoneOtpModal
+        isOpen={isOtpOpen}
+        onClose={() => setIsOtpOpen(false)}
+        phoneNumber={phone}
+        onVerified={handleOtpSuccess}
+        title="Verify Table Reservation"
+        subtitle="We send a quick 6-digit SMS code to confirm your table"
+      />
     </section>
   );
 }
