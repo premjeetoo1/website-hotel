@@ -55,23 +55,6 @@ export interface ContactData {
   createdAt?: unknown;
 }
 
-export interface RoomBookingData {
-  id?: string;
-  guestName: string;
-  phone: string;
-  email?: string;
-  roomType: 'Deluxe AC Room' | 'Standard Non-AC Room' | 'Family Quad Room' | 'Driver / Tour Dormitory';
-  roomsCount: number;
-  guestsCount: number;
-  checkInDate: string;
-  checkOutDate: string;
-  nights: number;
-  totalEstimate: number;
-  specialRequests?: string;
-  status?: 'confirmed' | 'pending';
-  createdAt?: unknown;
-}
-
 export interface GroupCateringData {
   id?: string;
   organizerName: string;
@@ -105,7 +88,6 @@ const STORAGE_KEYS = {
   RESERVATIONS: 'aaroshi_hotel_reservations',
   ORDERS: 'aaroshi_hotel_orders',
   CONTACTS: 'aaroshi_hotel_contacts',
-  ROOM_BOOKINGS: 'aaroshi_hotel_rooms',
   GROUP_CATERINGS: 'aaroshi_hotel_group_catering',
   REVIEWS: 'aaroshi_hotel_reviews',
 };
@@ -401,57 +383,6 @@ export async function getLiveContacts(): Promise<ContactData[]> {
 }
 
 /**
- * Submit Room Booking Inquiry / Stay Reservation
- */
-export async function submitRoomBooking(data: RoomBookingData): Promise<{ id: string; isLive: boolean }> {
-  if (isFirebaseConfigured && db) {
-    try {
-      const docRef = await addDoc(collection(db, 'room_bookings'), {
-        ...data,
-        status: data.status || 'confirmed',
-        createdAt: serverTimestamp(),
-      });
-      return { id: docRef.id, isLive: true };
-    } catch (error) {
-      console.warn('Firebase room booking failed, falling back to localStorage:', error);
-    }
-  }
-
-  const id = 'RM-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-  const newBooking: RoomBookingData = {
-    ...data,
-    id,
-    status: data.status || 'confirmed',
-    createdAt: new Date().toISOString(),
-  };
-  saveLocalItem(STORAGE_KEYS.ROOM_BOOKINGS, newBooking);
-  return { id, isLive: false };
-}
-
-/**
- * Fetch all Room Bookings (Admin)
- */
-export async function getLiveRoomBookings(): Promise<RoomBookingData[]> {
-  if (isFirebaseConfigured && db) {
-    try {
-      const q = query(collection(db, 'room_bookings'), orderBy('createdAt', 'desc'), limit(100));
-      const querySnapshot = await getDocs(q);
-      const bookings: RoomBookingData[] = [];
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt;
-        bookings.push({ id: docSnap.id, ...(data as Omit<RoomBookingData, 'id'>), createdAt });
-      });
-      return bookings;
-    } catch (error) {
-      console.warn('Could not fetch room bookings from Firebase:', error);
-    }
-  }
-
-  return getLocalItems<RoomBookingData>(STORAGE_KEYS.ROOM_BOOKINGS);
-}
-
-/**
  * Submit Group / Tour Bus Catering Inquiry
  */
 export async function submitGroupCatering(data: GroupCateringData): Promise<{ id: string; isLive: boolean }> {
@@ -533,33 +464,6 @@ export function getWhatsAppBookingUrl(res: {
   return `https://wa.me/${RESTAURANT_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 }
 
-export function getWhatsAppRoomBookingUrl(booking: {
-  id?: string;
-  guestName: string;
-  phone: string;
-  roomType: string;
-  roomsCount: number;
-  guestsCount: number;
-  checkInDate: string;
-  checkOutDate: string;
-  nights: number;
-  totalEstimate: number;
-  specialRequests?: string;
-}) {
-  const text = `*New Hotel Room Booking - Aaroshi Hotel Chalsa*\n\n` +
-    `🔖 *Booking ID:* ${booking.id || 'Pending'}\n` +
-    `👤 *Guest Name:* ${booking.guestName}\n` +
-    `📞 *Phone:* ${booking.phone}\n` +
-    `🛏️ *Room Type:* ${booking.roomType} (${booking.roomsCount} Room${booking.roomsCount > 1 ? 's' : ''})\n` +
-    `👥 *Guests:* ${booking.guestsCount} Persons\n` +
-    `📅 *Check-In:* ${booking.checkInDate}\n` +
-    `📅 *Check-Out:* ${booking.checkOutDate} (${booking.nights} Night${booking.nights > 1 ? 's' : ''})\n` +
-    `💰 *Estimated Total:* ₹${booking.totalEstimate}\n` +
-    (booking.specialRequests ? `📝 *Notes:* ${booking.specialRequests}\n` : '') +
-    `\n📍 *Location:* Mahabari, Chalsa, West Bengal`;
-
-  return `https://wa.me/${RESTAURANT_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
-}
 
 export function getWhatsAppGroupCateringUrl(group: {
   id?: string;

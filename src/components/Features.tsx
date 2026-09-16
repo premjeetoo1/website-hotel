@@ -48,11 +48,11 @@ const features = [
   },
   {
     icon: ShieldCheck,
-    title: 'AC Family Hall & Clean Rooms',
+    title: 'AC Family Dining & Verandah',
     bengaliTitle: 'পরিচ্ছন্ন এসি ফ্যামিলি ডাইনিং',
     description:
-      'Well-maintained dining facilities and rooms with hygienic washrooms and courteous family hospitality.',
-    badge: 'Clean & Comfortable',
+      'Well-maintained air-conditioned family hall and outdoor garden verandah with hygienic clean washrooms.',
+    badge: '100% Family Friendly',
     color: 'from-purple-500 to-pink-500',
     bgLight: 'bg-purple-50/70',
     border: 'border-purple-100',

@@ -85,7 +85,7 @@ export default function About() {
                 We take pride in our diverse menu offering <strong className="text-dark-900">smoky Tandoori Chicken</strong>, rich <strong className="text-dark-900">Mutton Kosha &amp; Chicken Masala</strong>, authentic <strong className="text-dark-900">Bengali Thalis</strong>, and flavorful <strong className="text-dark-900">Nepali-Indian specialties</strong>—all prepared with fresh local ingredients at reasonable prices (₹200–400 per person).
               </p>
               <p>
-                With well-maintained AC family dining facilities, clean rooms, and a spacious parking area that easily accommodates cars, SUVs, and tour buses, we ensure your journey through North Bengal is comfortable and delicious.
+                With well-maintained AC family dining halls, lush outdoor garden seating, and a spacious parking area that easily accommodates cars, SUVs, and tour buses, we ensure your journey through North Bengal is comfortable, refreshing, and delicious.
               </p>
             </div>
 

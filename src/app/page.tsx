@@ -2,7 +2,6 @@ import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import TableBookingSection from '@/components/TableBookingSection';
 import OrderAheadBanner from '@/components/OrderAheadBanner';
-import RoomsSection from '@/components/RoomsSection';
 import Features from '@/components/Features';
 import PopularDishes from '@/components/PopularDishes';
 import GroupCateringSection from '@/components/GroupCateringSection';
@@ -26,7 +25,6 @@ export default function HomePage() {
           <Hero />
           <TableBookingSection />
           <OrderAheadBanner />
-          <RoomsSection />
           <Features />
           <PopularDishes />
           <GroupCateringSection />

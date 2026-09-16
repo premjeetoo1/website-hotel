@@ -18,7 +18,6 @@ const navItems = [
   { href: '/#home', label: 'Home' },
   { href: '/#book-table', label: 'Book Table' },
   { href: '/#order-ahead', label: 'Express Drive-In' },
-  { href: '/#rooms', label: 'Rooms & Stay' },
   { href: '/#menu', label: 'Menu' },
   { href: '/#group-catering', label: 'Tour Bus Groups' },
   { href: '/#testimonials', label: 'Reviews' },

@@ -51,7 +51,7 @@ export default function JsonLd() {
           name: 'Anirban Dutta',
         },
         datePublished: '2024-02-15',
-        reviewBody: 'Well maintained rooms, restaurants and facilities with good staff',
+        reviewBody: 'Well maintained AC dining halls, delicious food, and facilities with great staff',
         reviewRating: {
           '@type': 'Rating',
           ratingValue: '5',

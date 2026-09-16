@@ -31,7 +31,6 @@ import {
   getLiveReservations,
   getLiveContacts,
   getLiveReviews,
-  getLiveRoomBookings,
   getLiveGroupCaterings,
   updateOrderStatus,
   updateReservationStatus,
@@ -39,11 +38,10 @@ import {
   ReservationData,
   ContactData,
   ReviewData,
-  RoomBookingData,
   GroupCateringData,
 } from '@/lib/firebaseServices';
 import { isFirebaseConfigured } from '@/lib/firebase';
-import { BedDouble, Bus } from 'lucide-react';
+import { Bus } from 'lucide-react';
 
 const ADMIN_PIN = '1995'; // Default management PIN (Est. 1995)
 
@@ -52,13 +50,12 @@ export default function AdminPage() {
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
 
-  // Tabs: 'orders' | 'reservations' | 'rooms' | 'caterings' | 'messages' | 'reviews'
-  const [activeTab, setActiveTab] = useState<'orders' | 'reservations' | 'rooms' | 'caterings' | 'messages' | 'reviews'>('orders');
+  // Tabs: 'orders' | 'reservations' | 'caterings' | 'messages' | 'reviews'
+  const [activeTab, setActiveTab] = useState<'orders' | 'reservations' | 'caterings' | 'messages' | 'reviews'>('orders');
 
   // Data states
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [reservations, setReservations] = useState<ReservationData[]>([]);
-  const [roomBookings, setRoomBookings] = useState<RoomBookingData[]>([]);
   const [groupCaterings, setGroupCaterings] = useState<GroupCateringData[]>([]);
   const [contacts, setContacts] = useState<ContactData[]>([]);
   const [reviews, setReviews] = useState<ReviewData[]>([]);
@@ -103,17 +100,15 @@ export default function AdminPage() {
   const loadAllData = useCallback(async () => {
     setLoading(true);
     try {
-      const [o, r, rm, grp, c, rev] = await Promise.all([
+      const [o, r, grp, c, rev] = await Promise.all([
         getLiveOrders(),
         getLiveReservations(),
-        getLiveRoomBookings(),
         getLiveGroupCaterings(),
         getLiveContacts(),
         getLiveReviews(),
       ]);
       setOrders(o || []);
       setReservations(r || []);
-      setRoomBookings(rm || []);
       setGroupCaterings(grp || []);
       setContacts(c || []);
       setReviews(rev || []);
@@ -374,16 +369,6 @@ export default function AdminPage() {
             >
               <Calendar className="w-4 h-4" />
               <span>Table Bookings ({reservations.length})</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('rooms')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
-                activeTab === 'rooms' ? 'bg-white text-primary-700 shadow-sm' : 'text-dark-600 hover:text-dark-900'
-              }`}
-            >
-              <BedDouble className="w-4 h-4" />
-              <span>Room Stays ({roomBookings.length})</span>
             </button>
 
             <button
@@ -653,84 +638,6 @@ export default function AdminPage() {
                         className="btn-primary flex-1 py-2 text-xs font-bold rounded-xl text-center"
                       >
                         Call Guest
-                      </a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB: ROOM BOOKINGS */}
-        {activeTab === 'rooms' && (
-          <div className="space-y-4">
-            {roomBookings.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center text-dark-400">
-                <BedDouble className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p className="font-heading font-bold text-base text-dark-700">No Room Bookings Yet</p>
-                <p className="text-xs mt-1">Incoming room stay reservations from the website will appear here in real-time.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {roomBookings.map((rm) => (
-                  <div key={rm.id} className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm space-y-4 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-mono text-xs font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-lg border border-primary-200">
-                          {rm.id}
-                        </span>
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
-                          {rm.status || 'Confirmed'}
-                        </span>
-                      </div>
-
-                      <h4 className="font-heading font-bold text-base text-dark-900">{rm.guestName}</h4>
-                      <p className="text-xs font-medium text-dark-600 flex items-center gap-1 mt-0.5">
-                        <Phone className="w-3 h-3 text-primary-500" /> {rm.phone}
-                      </p>
-
-                      <div className="mt-3 space-y-1.5 text-xs text-dark-600 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                        <div className="flex justify-between font-semibold text-dark-900">
-                          <span>{rm.roomType}</span>
-                          <span>{rm.roomsCount} Room(s)</span>
-                        </div>
-                        <div className="flex justify-between text-dark-500">
-                          <span>Check-In / Out:</span>
-                          <span>{rm.checkInDate} to {rm.checkOutDate}</span>
-                        </div>
-                        <div className="flex justify-between text-dark-500">
-                          <span>Stay Duration:</span>
-                          <span>{rm.nights} Night(s) · {rm.guestsCount} Guests</span>
-                        </div>
-                        <div className="flex justify-between font-bold text-primary-700 pt-1 border-t border-gray-200">
-                          <span>Estimated Bill:</span>
-                          <span>₹{rm.totalEstimate}</span>
-                        </div>
-                      </div>
-
-                      {rm.specialRequests && (
-                        <div className="p-2 bg-amber-50 rounded-lg border border-amber-100 text-[11px] text-amber-800 mt-2">
-                          <span className="font-bold block text-[10px] text-amber-600 uppercase">Notes:</span>
-                          {rm.specialRequests}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="pt-3 border-t border-gray-100 flex gap-2">
-                      <a
-                        href={`tel:${rm.phone}`}
-                        className="btn-primary flex-1 py-2 text-xs font-bold rounded-xl text-center"
-                      >
-                        Call Guest
-                      </a>
-                      <a
-                        href={`https://wa.me/${rm.phone.replace(/[^0-9]/g, '')}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
-                      >
-                        WhatsApp
                       </a>
                     </div>
                   </div>

@@ -18,7 +18,6 @@ const footerLinks = {
     { label: 'Home', href: '/#home' },
     { label: 'Book a Table', href: '/#book-table' },
     { label: 'Highway Express Pre-Order', href: '/#order-ahead' },
-    { label: 'Hotel Rooms & Stay', href: '/#rooms' },
     { label: 'Full Menu', href: '/#menu' },
     { label: 'Tour Bus Packages', href: '/#group-catering' },
     { label: 'Rate Us on Google', href: '/#google-reviews' },
@@ -26,7 +25,7 @@ const footerLinks = {
   ],
   services: [
     { label: 'Table Reservations', href: '/#book-table' },
-    { label: 'AC & Non-AC Room Stays', href: '/#rooms' },
+    { label: 'AC Family Hall Dining', href: '/#book-table' },
     { label: 'Highway Express Drive-In', href: '/#order-ahead' },
     { label: 'Tour Bus & Group Meals', href: '/#group-catering' },
     { label: 'Spacious Car & Bus Parking', href: '/#about' },
