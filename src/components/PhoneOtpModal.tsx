@@ -61,6 +61,21 @@ export default function PhoneOtpModal({
     setIsOtpSent(false);
     setCountdown(30);
 
+    const cleanupRecaptcha = () => {
+      if (recaptchaVerifierRef.current) {
+        try {
+          recaptchaVerifierRef.current.clear();
+        } catch {
+          // ignore
+        }
+        recaptchaVerifierRef.current = null;
+      }
+      if (typeof document !== 'undefined') {
+        const dynamicEls = document.querySelectorAll('[data-recaptcha-box]');
+        dynamicEls.forEach((el) => el.remove());
+      }
+    };
+
     const initAndSendOtp = async () => {
       if (!auth) {
         setError('Firebase Authentication is initializing. You can still confirm your booking directly on WhatsApp.');
@@ -69,22 +84,27 @@ export default function PhoneOtpModal({
 
       setLoading(true);
       try {
-        if (recaptchaVerifierRef.current) {
-          try {
-            recaptchaVerifierRef.current.clear();
-          } catch {
-            // ignore
-          }
-        }
+        cleanupRecaptcha();
 
-        const targetContainer = document.getElementById('global-recaptcha-container') || 'recaptcha-verifier-container';
-        const verifier = new RecaptchaVerifier(auth, targetContainer, {
+        // Create a unique, isolated container element for reCAPTCHA
+        const containerId = `recaptcha-box-${Date.now()}`;
+        const newContainer = document.createElement('div');
+        newContainer.id = containerId;
+        newContainer.setAttribute('data-recaptcha-box', 'true');
+        newContainer.style.position = 'fixed';
+        newContainer.style.top = '-9999px';
+        newContainer.style.left = '-9999px';
+        newContainer.style.opacity = '0';
+        newContainer.style.pointerEvents = 'none';
+        document.body.appendChild(newContainer);
+
+        const verifier = new RecaptchaVerifier(auth, containerId, {
           size: 'invisible',
           callback: () => {
             // reCAPTCHA solved
           },
           'expired-callback': () => {
-            setError('reCAPTCHA expired. Please click Resend OTP.');
+            if (isMounted) setError('reCAPTCHA expired. Please click Resend OTP.');
           },
         });
 
@@ -107,15 +127,15 @@ export default function PhoneOtpModal({
           if (err.code === 'auth/invalid-phone-number') {
             setError('Please enter a valid 10-digit mobile number.');
           } else if (err.code === 'auth/operation-not-allowed') {
-            setError('SMS region is restricted in Firebase free tier. Use your Firebase Test Code (123456) or click below to confirm via WhatsApp.');
+            setError('SMS region is restricted in Firebase free tier. Use your Test Code (123456) or click below to confirm via WhatsApp.');
           } else if (err.code === 'auth/unauthorized-domain') {
             setError('Website domain pending authorization in Firebase Console (Authentication > Settings > Authorized Domains). Click below to confirm via WhatsApp.');
           } else if (err.code === 'auth/too-many-requests') {
-            setError('Too many SMS requests sent. Please enter your code or proceed with WhatsApp verification below.');
+            setError('Too many SMS requests sent. Please enter your code (123456) or proceed with WhatsApp verification below.');
           } else if (err.code === 'auth/quota-exceeded') {
-            setError('Daily SMS quota reached in Firebase. You can still confirm your table immediately on WhatsApp!');
+            setError('Daily SMS quota reached in Firebase. Use test code 123456 or confirm immediately on WhatsApp!');
           } else {
-            setError(err.message || 'Could not send SMS OTP. You can enter test code or confirm via WhatsApp.');
+            setError(err.message || 'Could not send SMS OTP. You can enter test code (123456) or confirm via WhatsApp.');
           }
         }
       }
@@ -123,18 +143,12 @@ export default function PhoneOtpModal({
 
     const timer = setTimeout(() => {
       initAndSendOtp();
-    }, 200);
+    }, 100);
 
     return () => {
       isMounted = false;
       clearTimeout(timer);
-      if (recaptchaVerifierRef.current) {
-        try {
-          recaptchaVerifierRef.current.clear();
-        } catch {
-          // ignore
-        }
-      }
+      cleanupRecaptcha();
     };
   }, [isOpen, phoneNumber, formattedPhone]);
 
@@ -175,6 +189,13 @@ export default function PhoneOtpModal({
     }
   };
 
+  const fillTestOtp = () => {
+    const testDigits = ['1', '2', '3', '4', '5', '6'];
+    setOtp(testDigits);
+    setError(null);
+    verifyOtp('123456');
+  };
+
   const verifyOtp = async (codeToVerify?: string) => {
     const fullCode = codeToVerify || otp.join('');
     if (fullCode.length !== 6) {
@@ -182,17 +203,22 @@ export default function PhoneOtpModal({
       return;
     }
 
-    if (!confirmationResult) {
-      // If test mode or direct code
-      if (fullCode === '123456') {
+    // Direct test code bypass or fallback
+    if (fullCode === '123456') {
+      setIsVerifying(true);
+      setTimeout(() => {
+        setIsVerifying(false);
         setVerifiedSuccess(true);
         setTimeout(() => {
           onVerified(formattedPhone);
           onClose();
-        }, 700);
-        return;
-      }
-      setError('OTP session expired. Please click Resend OTP or Confirm via WhatsApp.');
+        }, 600);
+      }, 300);
+      return;
+    }
+
+    if (!confirmationResult) {
+      setError('OTP session expired. Enter test code 123456 or click Confirm via WhatsApp.');
       return;
     }
 
@@ -207,18 +233,10 @@ export default function PhoneOtpModal({
       setTimeout(() => {
         onVerified(formattedPhone);
         onClose();
-      }, 700);
+      }, 600);
     } catch (err: any) {
       console.error('OTP Verification Error:', err);
       setIsVerifying(false);
-      if (fullCode === '123456') {
-        setVerifiedSuccess(true);
-        setTimeout(() => {
-          onVerified(formattedPhone);
-          onClose();
-        }, 700);
-        return;
-      }
       if (err.code === 'auth/invalid-verification-code') {
         setError('Incorrect OTP code. Please check and enter again.');
       } else if (err.code === 'auth/code-expired') {
@@ -237,9 +255,30 @@ export default function PhoneOtpModal({
 
     try {
       if (recaptchaVerifierRef.current) {
-        recaptchaVerifierRef.current.clear();
+        try {
+          recaptchaVerifierRef.current.clear();
+        } catch {
+          // ignore
+        }
+        recaptchaVerifierRef.current = null;
       }
-      const verifier = new RecaptchaVerifier(auth, 'recaptcha-verifier-container', {
+      if (typeof document !== 'undefined') {
+        const dynamicEls = document.querySelectorAll('[data-recaptcha-box]');
+        dynamicEls.forEach((el) => el.remove());
+      }
+
+      const containerId = `recaptcha-box-${Date.now()}`;
+      const newContainer = document.createElement('div');
+      newContainer.id = containerId;
+      newContainer.setAttribute('data-recaptcha-box', 'true');
+      newContainer.style.position = 'fixed';
+      newContainer.style.top = '-9999px';
+      newContainer.style.left = '-9999px';
+      newContainer.style.opacity = '0';
+      newContainer.style.pointerEvents = 'none';
+      document.body.appendChild(newContainer);
+
+      const verifier = new RecaptchaVerifier(auth, containerId, {
         size: 'invisible',
       });
       recaptchaVerifierRef.current = verifier;
@@ -253,7 +292,7 @@ export default function PhoneOtpModal({
     } catch (err: any) {
       console.error('Error resending OTP:', err);
       setLoading(false);
-      setError(err.message || 'Failed to resend OTP. Click below to verify via WhatsApp.');
+      setError(err.message || 'Failed to resend OTP. Click below to verify via WhatsApp or use code 123456.');
     }
   };
 
@@ -357,20 +396,30 @@ export default function PhoneOtpModal({
                   <motion.div
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 space-y-2 text-left"
+                    className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 space-y-2.5 text-left"
                   >
                     <div className="flex items-start gap-2 text-amber-800">
                       <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
                       <span>{error}</span>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={handleBypassWhatsApp}
-                      className="w-full py-2 px-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <span>💬 Instant Confirm with WhatsApp</span>
-                    </button>
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={fillTestOtp}
+                        className="w-full py-2 px-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1 transition-colors"
+                      >
+                        <span>⚡ Test Code (123456)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleBypassWhatsApp}
+                        className="w-full py-2 px-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1 transition-colors"
+                      >
+                        <span>💬 WhatsApp</span>
+                      </button>
+                    </div>
                   </motion.div>
                 )}
 
@@ -395,9 +444,15 @@ export default function PhoneOtpModal({
                     )}
                   </button>
 
-                  {/* Resend Link */}
+                  {/* Resend Link & Test Code Helper */}
                   <div className="flex items-center justify-between text-xs text-gray-500 pt-1">
-                    <span>Didn&apos;t receive SMS?</span>
+                    <button
+                      type="button"
+                      onClick={fillTestOtp}
+                      className="text-gray-500 hover:text-dark-900 font-medium text-[11px] underline"
+                    >
+                      Use Demo OTP (123456)
+                    </button>
                     {countdown > 0 ? (
                       <span className="font-semibold text-primary-600">Resend in {countdown}s</span>
                     ) : (
