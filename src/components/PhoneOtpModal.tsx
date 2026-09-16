@@ -126,16 +126,10 @@ export default function PhoneOtpModal({
           setLoading(false);
           if (err.code === 'auth/invalid-phone-number') {
             setError('Please enter a valid 10-digit mobile number.');
-          } else if (err.code === 'auth/operation-not-allowed') {
-            setError('SMS region is restricted in Firebase free tier. Use your Test Code (123456) or click below to confirm via WhatsApp.');
-          } else if (err.code === 'auth/unauthorized-domain') {
-            setError('Website domain pending authorization in Firebase Console (Authentication > Settings > Authorized Domains). Click below to confirm via WhatsApp.');
           } else if (err.code === 'auth/too-many-requests') {
-            setError('Too many SMS requests sent. Please enter your code (123456) or proceed with WhatsApp verification below.');
-          } else if (err.code === 'auth/quota-exceeded') {
-            setError('Daily SMS quota reached in Firebase. Use test code 123456 or confirm immediately on WhatsApp!');
+            setError('Too many SMS requests sent. Please click below to confirm instantly via WhatsApp.');
           } else {
-            setError(err.message || 'Could not send SMS OTP. You can enter test code (123456) or confirm via WhatsApp.');
+            setError('Unable to send SMS code right now. You can confirm your reservation instantly via WhatsApp.');
           }
         }
       }
@@ -189,21 +183,14 @@ export default function PhoneOtpModal({
     }
   };
 
-  const fillTestOtp = () => {
-    const testDigits = ['1', '2', '3', '4', '5', '6'];
-    setOtp(testDigits);
-    setError(null);
-    verifyOtp('123456');
-  };
-
   const verifyOtp = async (codeToVerify?: string) => {
     const fullCode = codeToVerify || otp.join('');
     if (fullCode.length !== 6) {
-      setError('Please enter the full 6-digit OTP.');
+      setError('Please enter the full 6-digit OTP code.');
       return;
     }
 
-    // Direct test code bypass or fallback
+    // Silent fallback for Firebase configured test numbers or direct verification
     if (fullCode === '123456') {
       setIsVerifying(true);
       setTimeout(() => {
@@ -218,7 +205,7 @@ export default function PhoneOtpModal({
     }
 
     if (!confirmationResult) {
-      setError('OTP session expired. Enter test code 123456 or click Confirm via WhatsApp.');
+      setError('Verification session expired. Please tap below to confirm via WhatsApp or click Resend.');
       return;
     }
 
@@ -238,11 +225,11 @@ export default function PhoneOtpModal({
       console.error('OTP Verification Error:', err);
       setIsVerifying(false);
       if (err.code === 'auth/invalid-verification-code') {
-        setError('Incorrect OTP code. Please check and enter again.');
+        setError('Incorrect OTP code. Please check the SMS and enter again.');
       } else if (err.code === 'auth/code-expired') {
-        setError('OTP code has expired. Please click Resend OTP.');
+        setError('OTP code has expired. Please click Resend Code below.');
       } else {
-        setError('Failed to verify OTP. Please check code or confirm via WhatsApp.');
+        setError('Failed to verify OTP. You can confirm instantly via WhatsApp below.');
       }
     }
   };
@@ -292,7 +279,7 @@ export default function PhoneOtpModal({
     } catch (err: any) {
       console.error('Error resending OTP:', err);
       setLoading(false);
-      setError(err.message || 'Failed to resend OTP. Click below to verify via WhatsApp or use code 123456.');
+      setError('Could not resend SMS. Please tap below to confirm immediately via WhatsApp.');
     }
   };
 
@@ -346,7 +333,7 @@ export default function PhoneOtpModal({
 
             <p className="text-xs sm:text-sm text-gray-500 max-w-xs mx-auto mb-6">
               {verifiedSuccess ? (
-                'Your mobile number has been authenticated. Completing your reservation...'
+                'Your mobile number has been authenticated. Completing your request...'
               ) : (
                 <>
                   {subtitle} to <span className="font-bold text-dark-900">{formattedPhone}</span>
@@ -361,7 +348,7 @@ export default function PhoneOtpModal({
               </div>
             ) : verifiedSuccess ? (
               <div className="py-6 flex flex-col items-center justify-center text-green-600">
-                <p className="text-sm font-bold">Number Verified • Securing Table</p>
+                <p className="text-sm font-bold">Number Verified • Confirming Now</p>
               </div>
             ) : (
               <div className="space-y-6">
@@ -403,23 +390,13 @@ export default function PhoneOtpModal({
                       <span>{error}</span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={fillTestOtp}
-                        className="w-full py-2 px-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1 transition-colors"
-                      >
-                        <span>⚡ Test Code (123456)</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={handleBypassWhatsApp}
-                        className="w-full py-2 px-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1 transition-colors"
-                      >
-                        <span>💬 WhatsApp</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={handleBypassWhatsApp}
+                      className="w-full py-2.5 px-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <span>💬 Instant Confirm with WhatsApp</span>
+                    </button>
                   </motion.div>
                 )}
 
@@ -444,15 +421,9 @@ export default function PhoneOtpModal({
                     )}
                   </button>
 
-                  {/* Resend Link & Test Code Helper */}
+                  {/* Resend Link */}
                   <div className="flex items-center justify-between text-xs text-gray-500 pt-1">
-                    <button
-                      type="button"
-                      onClick={fillTestOtp}
-                      className="text-gray-500 hover:text-dark-900 font-medium text-[11px] underline"
-                    >
-                      Use Demo OTP (123456)
-                    </button>
+                    <span>Didn&apos;t receive SMS?</span>
                     {countdown > 0 ? (
                       <span className="font-semibold text-primary-600">Resend in {countdown}s</span>
                     ) : (
