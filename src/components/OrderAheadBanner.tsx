@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCart } from '@/context/CartContext';
 import { submitOrder, getWhatsAppOrderUrl } from '@/lib/firebaseServices';
 import confetti from 'canvas-confetti';
 import {
@@ -68,7 +67,6 @@ export default function OrderAheadBanner() {
   const [diningMode, setDiningMode] = useState<'dine-in' | 'takeaway'>('dine-in');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderVoucher, setOrderVoucher] = useState<{ id: string; whatsAppUrl: string } | null>(null);
-  const { addItem, openCart } = useCart();
 
   const handleOpenPreOrder = (combo: typeof QUICK_HIGHWAY_COMBOS[0]) => {
     setSelectedCombo(combo);

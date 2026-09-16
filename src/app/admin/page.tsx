@@ -885,7 +885,7 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  <p className="text-xs text-dark-600 italic leading-relaxed">&ldquo;{rev.text}&rdquo;</p>
+                  <p className="text-xs text-dark-600 italic leading-relaxed">&ldquo;{rev.text || rev.comment || ''}&rdquo;</p>
 
                   {rev.dish && (
                     <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-primary-50 text-primary-700 border border-primary-100">

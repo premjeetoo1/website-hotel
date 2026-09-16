@@ -306,9 +306,9 @@ export default function TableBookingSection() {
                     `👥 *Guests:* ${guestsCount} Persons\n` +
                     `📅 *Date:* ${selectedDate}\n` +
                     `⏰ *Time Slot:* ${selectedTime}\n` +
-                    `🪑 *Seating Zone:* ${selectedZone.title}\n` +
-                    (occasion ? `🎉 *Occasion:* ${occasion}\n` : '') +
-                    (notes ? `📝 *Notes:* ${notes}\n` : '') +
+                    `🪑 *Seating Zone:* ${selectedZone}\n` +
+                    (selectedOccasion ? `🎉 *Occasion:* ${selectedOccasion}\n` : '') +
+                    (specialRequests ? `📝 *Notes:* ${specialRequests}\n` : '') +
                     `\n📍 *Mahabari, Chalsa, West Bengal 735206*`
                   )}`}
                   target="_blank"

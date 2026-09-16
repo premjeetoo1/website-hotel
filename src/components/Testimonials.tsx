@@ -82,7 +82,7 @@ export default function Testimonials() {
             title: 'Verified Customer',
             rating: r.rating || 5,
             date: 'Recent',
-            text: r.text,
+            text: r.text || r.comment || '',
             tags: r.dish ? [r.dish] : ['Dine-In'],
             initials: r.name
               .split(' ')

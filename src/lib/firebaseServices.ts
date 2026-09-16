@@ -90,8 +90,11 @@ export interface GroupCateringData {
 export interface ReviewData {
   id?: string;
   name: string;
+  title?: string;
   rating: number;
-  comment: string;
+  text?: string;
+  comment?: string;
+  tags?: string[];
   dish?: string;
   date?: string;
   createdAt?: unknown;
