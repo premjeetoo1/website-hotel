@@ -123,7 +123,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAuthenticated) {
       loadAllData();
-      const interval = setInterval(loadAllData, 30000); // 30s auto-refresh
+      const interval = setInterval(loadAllData, 10000); // 10s auto-refresh for live orders
       return () => clearInterval(interval);
     }
   }, [isAuthenticated, loadAllData]);

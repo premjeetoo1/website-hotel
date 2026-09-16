@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { submitOrder, getWhatsAppOrderUrl } from '@/lib/firebaseServices';
 import confetti from 'canvas-confetti';
+import PhoneOtpModal from '@/components/PhoneOtpModal';
 import {
   Car,
   Clock,
   Flame,
   CheckCircle,
+  CheckCircle2,
   UtensilsCrossed,
   ArrowRight,
   Sparkles,
@@ -17,6 +19,7 @@ import {
   MessageSquare,
   X,
   MapPin,
+  ShieldCheck,
 } from 'lucide-react';
 
 const QUICK_HIGHWAY_COMBOS = [
@@ -67,6 +70,8 @@ export default function OrderAheadBanner() {
   const [diningMode, setDiningMode] = useState<'dine-in' | 'takeaway'>('dine-in');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderVoucher, setOrderVoucher] = useState<{ id: string; whatsAppUrl: string } | null>(null);
+  const [isOtpOpen, setIsOtpOpen] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
   const handleOpenPreOrder = (combo: typeof QUICK_HIGHWAY_COMBOS[0]) => {
     setSelectedCombo(combo);
@@ -76,19 +81,20 @@ export default function OrderAheadBanner() {
   const handleClose = () => {
     setSelectedCombo(null);
     setOrderVoucher(null);
+    setIsPhoneVerified(false);
   };
 
-  const handlePreOrderSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executePreOrderSubmit = async (verifiedPhone?: string) => {
     if (!selectedCombo) return;
 
     setIsSubmitting(true);
     const notes = `Highway Pre-Order ETA: ${eta} | Car/Vehicle: ${carNumber || 'Not provided'} | Dining: ${diningMode.toUpperCase()}`;
+    const finalPhone = verifiedPhone || phone;
 
     try {
       const res = await submitOrder({
         customerName,
-        phone,
+        phone: finalPhone,
         orderType: diningMode,
         items: [{ id: selectedCombo.id, name: selectedCombo.name, price: selectedCombo.price, quantity: 1 }],
         subtotal: selectedCombo.price,
@@ -99,7 +105,7 @@ export default function OrderAheadBanner() {
       const whatsAppUrl = getWhatsAppOrderUrl({
         id: res.id,
         customerName,
-        phone,
+        phone: finalPhone,
         orderType: `Highway Pre-Order (${diningMode})`,
         items: [{ name: selectedCombo.name, quantity: 1, price: selectedCombo.price }],
         total: selectedCombo.price,
@@ -123,6 +129,23 @@ export default function OrderAheadBanner() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handlePreOrderSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCombo || !customerName.trim() || !phone.trim()) return;
+
+    if (!isPhoneVerified) {
+      setIsOtpOpen(true);
+      return;
+    }
+
+    await executePreOrderSubmit();
+  };
+
+  const handleOtpSuccess = (verifiedPhone: string) => {
+    setIsPhoneVerified(true);
+    executePreOrderSubmit(verifiedPhone);
   };
 
   return (
@@ -319,14 +342,30 @@ export default function OrderAheadBanner() {
                       />
                     </div>
                     <div>
-                      <label className="label text-xs">Phone Number *</label>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <label className="label text-xs">Phone Number *</label>
+                        {isPhoneVerified ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+                            <CheckCircle2 className="w-3 h-3 text-green-600" />
+                            <span>OTP Verified</span>
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-primary-600 font-semibold flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3" />
+                            <span>SMS OTP</span>
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="tel"
                         required
                         value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
+                        onChange={(e) => {
+                          setPhone(e.target.value);
+                          if (isPhoneVerified) setIsPhoneVerified(false);
+                        }}
                         placeholder="+91 98765 43210"
-                        className="input-field py-2 text-xs"
+                        className={`input-field py-2 text-xs ${isPhoneVerified ? 'border-green-400 bg-green-50/20' : ''}`}
                       />
                     </div>
                   </div>
@@ -397,10 +436,15 @@ export default function OrderAheadBanner() {
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                           <span>Sending to Kitchen...</span>
                         </>
-                      ) : (
+                      ) : isPhoneVerified ? (
                         <>
                           <Flame className="w-4 h-4 text-amber-200" />
                           <span>Place Express Highway Pre-Order (₹{selectedCombo.price})</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck className="w-4 h-4 text-white" />
+                          <span>Verify Phone &amp; Pre-Order (₹{selectedCombo.price})</span>
                         </>
                       )}
                     </button>
@@ -414,6 +458,16 @@ export default function OrderAheadBanner() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* SMS Phone OTP Modal */}
+      <PhoneOtpModal
+        isOpen={isOtpOpen}
+        onClose={() => setIsOtpOpen(false)}
+        phoneNumber={phone}
+        onVerified={handleOtpSuccess}
+        title="Verify Highway Pre-Order"
+        subtitle="We send a quick 6-digit SMS code to verify your pre-order"
+      />
     </section>
   );
 }

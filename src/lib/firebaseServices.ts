@@ -136,6 +136,7 @@ export async function submitReservation(data: Omit<ReservationData, 'id' | 'crea
       const docRef = await addDoc(collection(db, 'reservations'), {
         ...stripUndefined(reservationRecord),
         createdAt: serverTimestamp(),
+        createdAtIso: new Date().toISOString(),
       });
       return { success: true, id: docRef.id, isLive: true };
     } catch (error) {
@@ -168,6 +169,7 @@ export async function submitOrder(data: Omit<OrderData, 'id' | 'createdAt'>): Pr
       const docRef = await addDoc(collection(db, 'orders'), {
         ...stripUndefined(orderRecord),
         createdAt: serverTimestamp(),
+        createdAtIso: new Date().toISOString(),
       });
       return { success: true, id: docRef.id, isLive: true };
     } catch (error) {
@@ -195,6 +197,7 @@ export async function submitContactMessage(data: Omit<ContactData, 'id' | 'creat
       const docRef = await addDoc(collection(db, 'contacts'), {
         ...stripUndefined(data),
         createdAt: serverTimestamp(),
+        createdAtIso: new Date().toISOString(),
       });
       return { success: true, id: docRef.id, isLive: true };
     } catch (error) {
@@ -220,6 +223,7 @@ export async function submitReview(data: Omit<ReviewData, 'id' | 'createdAt'>): 
       const docRef = await addDoc(collection(db, 'reviews'), {
         ...stripUndefined(data),
         createdAt: serverTimestamp(),
+        createdAtIso: new Date().toISOString(),
       });
       return { success: true, id: docRef.id, isLive: true };
     } catch (error) {
@@ -242,14 +246,14 @@ export async function submitReview(data: Omit<ReviewData, 'id' | 'createdAt'>): 
 export async function getLiveReviews(): Promise<ReviewData[]> {
   if (isFirebaseConfigured && db) {
     try {
-      const q = query(collection(db, 'reviews'), orderBy('createdAt', 'desc'), limit(50));
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await getDocs(collection(db, 'reviews'));
       const liveReviews: ReviewData[] = [];
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt;
+        const createdAt = data.createdAtIso || (data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt);
         liveReviews.push({ id: docSnap.id, ...(data as Omit<ReviewData, 'id'>), createdAt });
       });
+      liveReviews.sort((a, b) => new Date(String(b.createdAt || 0)).getTime() - new Date(String(a.createdAt || 0)).getTime());
       return liveReviews;
     } catch (error) {
       console.warn('Could not fetch reviews from Firebase:', error);
@@ -265,14 +269,14 @@ export async function getLiveReviews(): Promise<ReviewData[]> {
 export async function getLiveOrders(): Promise<OrderData[]> {
   if (isFirebaseConfigured && db) {
     try {
-      const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(100));
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await getDocs(collection(db, 'orders'));
       const orders: OrderData[] = [];
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt;
+        const createdAt = data.createdAtIso || (data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt);
         orders.push({ id: docSnap.id, ...(data as Omit<OrderData, 'id'>), createdAt });
       });
+      orders.sort((a, b) => new Date(String(b.createdAt || 0)).getTime() - new Date(String(a.createdAt || 0)).getTime());
       return orders;
     } catch (error) {
       console.warn('Could not fetch orders from Firebase:', error);
@@ -315,14 +319,14 @@ export async function updateOrderStatus(
 export async function getLiveReservations(): Promise<ReservationData[]> {
   if (isFirebaseConfigured && db) {
     try {
-      const q = query(collection(db, 'reservations'), orderBy('createdAt', 'desc'), limit(100));
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await getDocs(collection(db, 'reservations'));
       const reservations: ReservationData[] = [];
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt;
+        const createdAt = data.createdAtIso || (data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt);
         reservations.push({ id: docSnap.id, ...(data as Omit<ReservationData, 'id'>), createdAt });
       });
+      reservations.sort((a, b) => new Date(String(b.createdAt || 0)).getTime() - new Date(String(a.createdAt || 0)).getTime());
       return reservations;
     } catch (error) {
       console.warn('Could not fetch reservations from Firebase:', error);
@@ -365,14 +369,14 @@ export async function updateReservationStatus(
 export async function getLiveContacts(): Promise<ContactData[]> {
   if (isFirebaseConfigured && db) {
     try {
-      const q = query(collection(db, 'contacts'), orderBy('createdAt', 'desc'), limit(100));
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await getDocs(collection(db, 'contacts'));
       const contacts: ContactData[] = [];
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt;
+        const createdAt = data.createdAtIso || (data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt);
         contacts.push({ id: docSnap.id, ...(data as Omit<ContactData, 'id'>), createdAt });
       });
+      contacts.sort((a, b) => new Date(String(b.createdAt || 0)).getTime() - new Date(String(a.createdAt || 0)).getTime());
       return contacts;
     } catch (error) {
       console.warn('Could not fetch contacts from Firebase:', error);
@@ -392,6 +396,7 @@ export async function submitGroupCatering(data: GroupCateringData): Promise<{ id
         ...data,
         status: data.status || 'confirmed',
         createdAt: serverTimestamp(),
+        createdAtIso: new Date().toISOString(),
       });
       return { id: docRef.id, isLive: true };
     } catch (error) {
@@ -411,20 +416,20 @@ export async function submitGroupCatering(data: GroupCateringData): Promise<{ id
 }
 
 /**
- * Fetch all Group Caterings (Admin)
+ * Fetch all Group Catering Inquiries (for Admin Dashboard)
  */
 export async function getLiveGroupCaterings(): Promise<GroupCateringData[]> {
   if (isFirebaseConfigured && db) {
     try {
-      const q = query(collection(db, 'group_caterings'), orderBy('createdAt', 'desc'), limit(100));
-      const querySnapshot = await getDocs(q);
-      const caterings: GroupCateringData[] = [];
+      const querySnapshot = await getDocs(collection(db, 'group_caterings'));
+      const groups: GroupCateringData[] = [];
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt;
-        caterings.push({ id: docSnap.id, ...(data as Omit<GroupCateringData, 'id'>), createdAt });
+        const createdAt = data.createdAtIso || (data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt);
+        groups.push({ id: docSnap.id, ...(data as Omit<GroupCateringData, 'id'>), createdAt });
       });
-      return caterings;
+      groups.sort((a, b) => new Date(String(b.createdAt || 0)).getTime() - new Date(String(a.createdAt || 0)).getTime());
+      return groups;
     } catch (error) {
       console.warn('Could not fetch group caterings from Firebase:', error);
     }
