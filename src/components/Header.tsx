@@ -12,6 +12,7 @@ import {
   X,
   Utensils,
   MapPin,
+  Lock,
 } from 'lucide-react';
 
 const navItems = [
@@ -198,6 +199,17 @@ export default function Header() {
                   <Phone className="w-4 h-4 text-primary-600" />
                   <span>Call 095631 61422</span>
                 </a>
+
+                <div className="pt-2 text-center">
+                  <Link
+                    href="/admin"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="inline-flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 transition-colors py-1 px-2"
+                  >
+                    <Lock className="w-3 h-3 text-gray-400" />
+                    <span>Manager Portal</span>
+                  </Link>
+                </div>
               </div>
             </motion.div>
           )}

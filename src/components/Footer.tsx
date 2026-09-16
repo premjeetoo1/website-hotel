@@ -11,6 +11,7 @@ import {
   Utensils,
   ChevronRight,
   Heart,
+  Lock,
 } from 'lucide-react';
 
 const footerLinks = {
@@ -190,9 +191,11 @@ export default function Footer() {
               ))}
               <Link
                 href="/admin"
-                className="text-xs text-dark-500 hover:text-primary-400 transition-colors inline-flex items-center gap-1 font-semibold"
+                className="text-[11px] text-dark-500/80 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-dark-900/80 hover:bg-dark-800 border border-dark-800 transition-all shadow-inner"
+                title="Restaurant Staff & Management Access"
               >
-                <span>Staff Portal</span>
+                <Lock className="w-3 h-3 text-dark-500" />
+                <span>Manager Portal</span>
               </Link>
             </div>
           </div>
