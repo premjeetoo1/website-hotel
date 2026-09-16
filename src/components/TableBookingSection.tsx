@@ -718,17 +718,52 @@ export default function TableBookingSection() {
                         </span>
                       )}
                     </div>
-                    <input
-                      type="tel"
-                      required
-                      value={phone}
-                      onChange={(e) => {
-                        setPhone(e.target.value);
-                        if (isPhoneVerified) setIsPhoneVerified(false);
-                      }}
-                      placeholder="e.g. 95631 61422"
-                      className={`input-field py-2.5 text-sm ${isPhoneVerified ? 'border-green-400 bg-green-50/20' : ''}`}
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="tel"
+                        required
+                        value={phone}
+                        onChange={(e) => {
+                          setPhone(e.target.value);
+                          if (isPhoneVerified) setIsPhoneVerified(false);
+                        }}
+                        placeholder="e.g. 95631 61422"
+                        className={`input-field py-2.5 text-sm flex-1 ${isPhoneVerified ? 'border-green-400 bg-green-50/20' : ''}`}
+                      />
+                      {!isPhoneVerified && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (phone.replace(/[^0-9]/g, '').length >= 10) {
+                              setIsOtpOpen(true);
+                            } else {
+                              alert('Please enter a valid 10-digit mobile number first.');
+                            }
+                          }}
+                          disabled={phone.replace(/[^0-9]/g, '').length < 10}
+                          className="px-3.5 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold transition-all shadow-md shadow-primary-600/20 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-1.5"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                          <span>Send OTP</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {!isPhoneVerified && phone.replace(/[^0-9]/g, '').length >= 10 && (
+                      <div className="mt-2.5 p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 flex items-center justify-between gap-2">
+                        <div className="text-[11px] text-amber-900">
+                          <strong className="block font-bold">📲 Enter 6-Digit SMS OTP to confirm table</strong>
+                          <span>Click &quot;Send OTP&quot; or click the button below to verify</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsOtpOpen(true)}
+                          className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold shadow-sm whitespace-nowrap"
+                        >
+                          Open OTP Box
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
