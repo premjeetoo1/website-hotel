@@ -13,6 +13,7 @@ import {
   Clock,
   Car,
   Award,
+  Lock,
 } from 'lucide-react';
 
 export default function Hero() {
@@ -123,6 +124,15 @@ export default function Hero() {
             >
               <span>Explore Menu</span>
               <span aria-hidden="true">→</span>
+            </Link>
+
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-2 px-5 py-4 text-sm sm:text-base font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-2xl shadow-sm transition-all"
+              title="Manager / Admin Portal (PIN: 1995)"
+            >
+              <Lock className="w-4 h-4 text-amber-600" />
+              <span>Admin Login</span>
             </Link>
           </motion.div>
 

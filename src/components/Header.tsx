@@ -97,6 +97,16 @@ export default function Header() {
               <span>095631 61422</span>
             </a>
 
+            {/* Admin Login Button */}
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-dark-800 hover:text-primary-600 bg-gray-100 hover:bg-primary-50 border border-gray-200 hover:border-primary-300 rounded-full transition-all shadow-sm"
+              title="Restaurant Manager & Admin Login"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-600" />
+              <span>Admin Login</span>
+            </Link>
+
             {/* Table Reservation Button — Primary Header CTA */}
             <Link
               href="/#book-table"
@@ -200,16 +210,14 @@ export default function Header() {
                   <span>Call 095631 61422</span>
                 </a>
 
-                <div className="pt-2 text-center">
-                  <Link
-                    href="/admin"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="inline-flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 transition-colors py-1 px-2"
-                  >
-                    <Lock className="w-3 h-3 text-gray-400" />
-                    <span>Manager Portal</span>
-                  </Link>
-                </div>
+                <Link
+                  href="/admin"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full py-2.5 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl text-center flex items-center justify-center gap-2 transition-colors"
+                >
+                  <Lock className="w-3.5 h-3.5 text-amber-600" />
+                  <span>🔐 Admin Login (PIN: 1995)</span>
+                </Link>
               </div>
             </motion.div>
           )}
